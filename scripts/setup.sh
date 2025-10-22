@@ -13,25 +13,63 @@ if ! command -v cargo &> /dev/null; then
     source $HOME/.cargo/env
 fi
 
-# Install protobuf compiler
-echo "📦 Installing dependencies..."
+echo "🛠️  Installing cargo tools..."
+# Install protobuf compiler and system build deps
+echo "📦 Installing system dependencies (protobuf, build-essential, clang, libclang, pkg-config, zlib, openssl)..."
 
 if [ -f /etc/debian_version ]; then
-    # Debian/Ubuntu
-    sudo apt-get update
-    sudo apt-get install -y protobuf-compiler libprotobuf-dev build-essential
+  # Debian/Ubuntu
+  sudo apt-get update
+  sudo apt-get install -y \
+    protobuf-compiler \
+    libprotobuf-dev \
+    build-essential \
+    clang \
+    libclang-dev \
+    pkg-config \
+    zlib1g-dev \
+    libssl-dev \
+    ca-certificates \
+    curl
 elif [ -f /etc/redhat-release ]; then
-    # Fedora/RHEL
-    sudo dnf install -y protobuf-compiler protobuf-devel gcc
+  # Fedora/RHEL
+  sudo dnf install -y protobuf-compiler protobuf-devel gcc clang clang-devel pkgconfig zlib-devel openssl-devel
 else
-    echo "⚠️  Please install protobuf-compiler manually for your OS"
+  echo "⚠️  Please install protobuf-compiler and development tools manually for your OS"
 fi
 
 # Install useful cargo tools
 echo "🛠️  Installing cargo tools..."
-cargo install cargo-watch
-cargo install cargo-expand
-cargo install grpcurl
+cargo install cargo-watch || true
+cargo install cargo-expand || true
+
+# Install grpcurl (prefer apt or go install)
+echo "🌐 Installing grpcurl client..."
+if command -v grpcurl &> /dev/null; then
+  echo "grpcurl already installed"
+else
+  if [ -f /etc/debian_version ]; then
+    # Debian/Ubuntu: grpcurl available via apt in newer repos, otherwise use go install
+    sudo apt-get install -y grpcurl || {
+      # fallback to go install
+      if command -v go &> /dev/null; then
+        echo "Installing grpcurl via 'go install'"
+        go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+      else
+        echo "⚠️  'go' not installed. Install Go or grpcurl manually."
+      fi
+    }
+  else
+    if command -v go &> /dev/null; then
+      echo "Installing grpcurl via 'go install'"
+      go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+      export PATH=$PATH:$(go env GOPATH)/bin
+    else
+      echo "⚠️  Please install grpcurl or Go (for go install) manually."
+    fi
+  fi
+fi
 
 # Create necessary directories
 echo "📁 Creating directories..."

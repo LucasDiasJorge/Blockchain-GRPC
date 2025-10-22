@@ -3,13 +3,11 @@ use tonic::{transport::Server, Request, Response, Status};
 
 use crate::application::services::blockchain_service::BlockchainServiceImpl;
 
-// Include generated protobuf code
-pub mod blockchain {
-    tonic::include_proto!("blockchain");
-}
-
-use blockchain::blockchain_service_server::{BlockchainService, BlockchainServiceServer};
-use blockchain::*;
+// Use the generated protobuf module re-exported at `crate::infrastructure::grpc::blockchain`
+use crate::infrastructure::grpc::blockchain::blockchain_service_server::{
+    BlockchainService, BlockchainServiceServer,
+};
+use crate::infrastructure::grpc::blockchain::*;
 
 /// gRPC server implementation
 /// Delegates to application service layer

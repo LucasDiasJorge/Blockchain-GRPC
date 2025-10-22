@@ -15,7 +15,7 @@ source $HOME/.cargo/env
 ```bash
 # Ubuntu/Debian
 sudo apt update
-sudo apt install -y protobuf-compiler libprotobuf-dev build-essential
+sudo apt install -y protobuf-compiler libprotobuf-dev build-essential clang libclang-dev pkg-config zlib1g-dev libssl-dev curl
 
 # Fedora
 sudo dnf install protobuf-compiler protobuf-devel gcc
@@ -23,6 +23,8 @@ sudo dnf install protobuf-compiler protobuf-devel gcc
 # Arch Linux
 sudo pacman -S protobuf
 ```
+
+Note: On WSL/Ubuntu you must install a C toolchain and Clang/libclang for bindgen to generate FFI bindings used by some dependencies (for example, `zstd-sys`). Missing headers like `stddef.h` or missing `clang` will cause build failures. The `setup.sh` script installs these packages automatically.
 
 3. **Clone the repository**:
 ```bash
