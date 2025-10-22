@@ -1,0 +1,45 @@
+# Target directory
+/target/
+
+# Cargo lock file (uncomment if you want to commit it)
+# Cargo.lock
+
+# Build artifacts
+**/*.rs.bk
+*.pdb
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Data directories
+/data/
+/logs/
+
+# Configuration (if sensitive)
+# config.json
+
+# RocksDB
+*.sst
+*.log
+CURRENT
+LOCK
+LOG
+MANIFEST-*
+OPTIONS-*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Test coverage
+*.profraw
+*.profdata
+/coverage/

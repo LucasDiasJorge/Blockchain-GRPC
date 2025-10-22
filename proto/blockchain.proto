@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+package blockchain;
+
+// Main blockchain service
+service BlockchainService {
+    // Add a new block to a specific graph
+    rpc AddBlock(AddBlockRequest) returns (AddBlockResponse);
+    
+    // Get block by hash from a specific graph
+    rpc GetBlock(GetBlockRequest) returns (GetBlockResponse);
+    
+    // Get the latest block from a specific graph
+    rpc GetLatestBlock(GetLatestBlockRequest) returns (GetBlockResponse);
+    
+    // Get blockchain info for a specific graph
+    rpc GetGraphInfo(GetGraphInfoRequest) returns (GetGraphInfoResponse);
+    
+    // Verify integrity of a specific graph
+    rpc VerifyGraph(VerifyGraphRequest) returns (VerifyGraphResponse);
+    
+    // Cross-validate all graphs
+    rpc CrossValidateGraphs(CrossValidateRequest) returns (CrossValidateResponse);
+    
+    // List all available graphs
+    rpc ListGraphs(ListGraphsRequest) returns (ListGraphsResponse);
+    
+    // Create a new graph
+    rpc CreateGraph(CreateGraphRequest) returns (CreateGraphResponse);
+    
+    // Get blocks by range
+    rpc GetBlockRange(GetBlockRangeRequest) returns (GetBlockRangeResponse);
+}
+
+// Data types for different graph purposes
+enum GraphType {
+    TRANSACTION = 0;
+    IDENTITY = 1;
+    ASSET = 2;
+    AUDIT = 3;
+    CUSTOM = 4;
+}
+
+// Block data
+message Block {
+    string hash = 1;
+    string previous_hash = 2;
+    int64 timestamp = 3;
+    uint64 nonce = 4;
+    string data = 5;
+    uint64 height = 6;
+    string graph_id = 7;
+    repeated string cross_references = 8; // Hashes from other graphs for validation
+}
+
+// Transaction data structure
+message Transaction {
+    string id = 1;
+    string from = 2;
+    string to = 3;
+    double amount = 4;
+    int64 timestamp = 5;
+    string signature = 6;
+}
+
+// Requests and Responses
+message AddBlockRequest {
+    string graph_id = 1;
+    string data = 2;
+    repeated string cross_references = 3;
+}
+
+message AddBlockResponse {
+    bool success = 1;
+    string message = 2;
+    Block block = 3;
+}
+
+message GetBlockRequest {
+    string graph_id = 1;
+    string hash = 2;
+}
+
+message GetBlockResponse {
+    bool success = 1;
+    string message = 2;
+    Block block = 3;
+}
+
+message GetLatestBlockRequest {
+    string graph_id = 1;
+}
+
+message GetGraphInfoRequest {
+    string graph_id = 1;
+}
+
+message GetGraphInfoResponse {
+    bool success = 1;
+    string graph_id = 2;
+    GraphType graph_type = 3;
+    uint64 total_blocks = 4;
+    string latest_hash = 5;
+    int64 created_at = 6;
+    bool is_valid = 7;
+}
+
+message VerifyGraphRequest {
+    string graph_id = 1;
+}
+
+message VerifyGraphResponse {
+    bool success = 1;
+    bool is_valid = 2;
+    string message = 3;
+    repeated string errors = 4;
+}
+
+message CrossValidateRequest {}
+
+message CrossValidateResponse {
+    bool success = 1;
+    bool all_valid = 2;
+    string message = 3;
+    map<string, bool> graph_statuses = 4;
+}
+
+message ListGraphsRequest {}
+
+message ListGraphsResponse {
+    repeated GraphInfo graphs = 1;
+}
+
+message GraphInfo {
+    string graph_id = 1;
+    GraphType graph_type = 2;
+    uint64 total_blocks = 3;
+    string description = 4;
+}
+
+message CreateGraphRequest {
+    string graph_id = 1;
+    GraphType graph_type = 2;
+    string description = 3;
+}
+
+message CreateGraphResponse {
+    bool success = 1;
+    string message = 2;
+    GraphInfo graph_info = 3;
+}
+
+message GetBlockRangeRequest {
+    string graph_id = 1;
+    uint64 start_height = 2;
+    uint64 end_height = 3;
+}
+
+message GetBlockRangeResponse {
+    bool success = 1;
+    repeated Block blocks = 2;
+}
