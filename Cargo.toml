@@ -45,6 +45,11 @@ futures = "0.3"
 # UUID generation
 uuid = { version = "1.6", features = ["v4", "serde"] }
 
+# HTTP JSON proxy (for curl/Postman)
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.4"
+http-body-util = "0.1"
+
 [build-dependencies]
 tonic-build = "0.11"
 
