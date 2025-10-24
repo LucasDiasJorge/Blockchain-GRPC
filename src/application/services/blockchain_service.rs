@@ -375,7 +375,7 @@ impl BlockchainServiceImpl {
                     blocks: proto_blocks,
                 }))
             }
-            Err(e) => Ok(Response::new(GetBlockRangeResponse {
+            Err(_e) => Ok(Response::new(GetBlockRangeResponse {
                 success: false,
                 blocks: vec![],
             })),
