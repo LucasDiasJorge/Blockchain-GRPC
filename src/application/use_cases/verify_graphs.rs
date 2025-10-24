@@ -37,7 +37,7 @@ impl VerifyGraphsUseCase {
             graphs.into_iter().map(|g| (g.id.clone(), g)).collect();
 
         for (id, graph) in &graph_map {
-            if let Err(_) = graph.validate_cross_references(&graph_map) {
+            if graph.validate_cross_references(&graph_map).is_err() {
                 results.insert(id.clone(), false);
             }
         }
