@@ -11,8 +11,8 @@
 # IDE files
 .vscode/
 .idea/
-*.swp
 *.swo
+*.swp
 *~
 
 # OS files
@@ -43,3 +43,8 @@ OPTIONS-*
 *.profraw
 *.profdata
 /coverage/
+
+
+# C# Ignore build outputs
+bin/
+obj/
