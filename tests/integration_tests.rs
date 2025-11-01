@@ -24,7 +24,7 @@ async fn test_block_creation_and_validation() {
         vec![],
     );
 
-    assert!(graph.add_block(block1).is_ok());
+    let mined_block1 = graph.add_block(block1).unwrap();
     assert_eq!(graph.get_chain_length(), 2);
     assert!(graph.is_valid());
 
@@ -38,9 +38,12 @@ async fn test_block_creation_and_validation() {
         vec![],
     );
 
-    assert!(graph.add_block(block2).is_ok());
+    let mined_block2 = graph.add_block(block2).unwrap();
     assert_eq!(graph.get_chain_length(), 3);
     assert!(graph.is_valid());
+
+    // Verify linkage
+    assert_eq!(mined_block2.previous_hash, mined_block1.hash);
 }
 
 #[tokio::test]
@@ -181,7 +184,7 @@ async fn test_cross_references() {
         1,
         vec![],
     );
-    graph1.add_block(block1.clone()).unwrap();
+    let mined_block1 = graph1.add_block(block1).unwrap();
 
     // Add block to graph2 with cross-reference
     let latest2 = graph2.get_latest_block().unwrap();
@@ -190,7 +193,7 @@ async fn test_cross_references() {
         "Block in graph2".to_string(),
         "graph2".to_string(),
         1,
-        vec![block1.hash.clone()], // Cross-reference
+        vec![mined_block1.hash.clone()], // Cross-reference to mined block
     );
     graph2.add_block(block2).unwrap();
 

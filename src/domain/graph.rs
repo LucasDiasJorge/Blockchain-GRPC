@@ -65,7 +65,7 @@ impl BlockchainGraph {
     }
 
     /// Adds a new block to the graph
-    pub fn add_block(&mut self, mut block: Block) -> Result<(), String> {
+    pub fn add_block(&mut self, mut block: Block) -> Result<Block, String> {
         // Validate previous hash
         if let Some(last_block) = self.chain.last() {
             if block.previous_hash != last_block.hash {
@@ -88,8 +88,8 @@ impl BlockchainGraph {
             return Err("Block does not meet difficulty requirement".to_string());
         }
 
-        self.chain.push(block);
-        Ok(())
+        self.chain.push(block.clone());
+        Ok(block)
     }
 
     /// Gets the latest block in the graph

@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use axum::{extract::Path, extract::Query, routing::{get, post}, Json, Router};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tonic::transport::Channel;
 
 use blockchain_grpc::infrastructure::grpc::blockchain::blockchain_service_client::BlockchainServiceClient;
@@ -64,7 +64,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(state);
 
     tracing::info!("HTTP JSON proxy listening on http://{}", http_addr);
-    axum::Server::bind(&http_addr).serve(app.into_make_service()).await?;
+    
+    let listener = tokio::net::TcpListener::bind(&http_addr).await?;
+    axum::serve(listener, app).await?;
     Ok(())
 }
 

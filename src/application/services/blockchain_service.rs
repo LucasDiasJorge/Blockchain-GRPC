@@ -88,17 +88,20 @@ impl BlockchainServiceImpl {
             request.cross_references,
         );
 
-        // Add block to graph
-        if let Err(e) = graph.add_block(block.clone()) {
-            return Ok(Response::new(AddBlockResponse {
-                success: false,
-                message: format!("Failed to add block: {}", e),
-                block: None,
-            }));
-        }
+        // Add block to graph and capture the mined block
+        let mined_block = match graph.add_block(block) {
+            Ok(b) => b,
+            Err(e) => {
+                return Ok(Response::new(AddBlockResponse {
+                    success: false,
+                    message: format!("Failed to add block: {}", e),
+                    block: None,
+                }));
+            }
+        };
 
-        // Persist block
-        if let Err(e) = self.repository.save_block(&graph_id, &block).await {
+        // Persist the mined block
+        if let Err(e) = self.repository.save_block(&graph_id, &mined_block).await {
             return Ok(Response::new(AddBlockResponse {
                 success: false,
                 message: format!("Failed to persist block: {}", e),
@@ -107,7 +110,7 @@ impl BlockchainServiceImpl {
         }
 
         // Convert to proto block
-        let proto_block = self.block_to_proto(&block);
+        let proto_block = self.block_to_proto(&mined_block);
 
         Ok(Response::new(AddBlockResponse {
             success: true,
