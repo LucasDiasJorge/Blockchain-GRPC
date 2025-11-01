@@ -1,0 +1,55 @@
+# Configuração de build otimizada para acelerar compilação
+
+[build]
+# Usa múltiplos cores em paralelo (ajuste conforme seu CPU)
+jobs = 8
+
+# Incremental compilation (mantém cache entre builds)
+incremental = true
+
+# SCCACHE - Cache de compilação compartilhado
+# Descomente após instalar: cargo install sccache
+# rustc-wrapper = "sccache"
+
+# Usar mold/lld como linker (muito mais rápido que o padrão)
+# Descomente a linha apropriada para seu sistema:
+
+# Para Windows (você está usando):
+# rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+# Para Linux:
+# rustflags = ["-C", "linker=clang", "-C", "link-arg=-fuse-ld=lld"]
+
+# Para macOS:
+# rustflags = ["-C", "link-arg=-fuse-ld=/usr/local/bin/zld"]
+
+[profile.dev]
+# Otimizações leves em modo dev para acelerar
+opt-level = 1
+# Desabilita debug info completo (acelera muito)
+debug = 1
+# Compilação incremental
+incremental = true
+# Menos verificações em dev
+overflow-checks = false
+# Codegen units maior = compilação paralela mais rápida
+codegen-units = 256
+
+[profile.dev.package."*"]
+# Compila DEPENDÊNCIAS em modo otimizado, mas seu código em debug
+# Isso faz as dependências serem compiladas uma vez e cacheadas
+opt-level = 3
+
+[profile.release]
+# Já está bem configurado no Cargo.toml
+opt-level = 3
+lto = true
+codegen-units = 1
+
+# Cache de registro
+[net]
+git-fetch-with-cli = true
+
+[term]
+verbose = false
+quiet = false
