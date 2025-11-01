@@ -1,0 +1,26 @@
+# Ignore Git metadata
+.git
+.gitignore
+
+# Ignore compiled artifacts
+target
+**/target
+
+# Ignore local configuration
+config.json
+.env
+
+# Ignore IDE/editor folders
+.vscode
+.idea
+
+# Ignore build caches/logs
+**/*.log
+**/*.tmp
+
+# Ignore binaries from the C# sample app
+Smart-Contract/bin
+Smart-Contract/obj
+
+# The docker output directory (if created)
+dist
