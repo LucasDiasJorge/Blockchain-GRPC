@@ -61,6 +61,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Blocks
         .route("/graphs/:graph_id/blocks", post(add_block).get(get_block_range))
         .route("/graphs/:graph_id/blocks/latest", get(get_latest_block))
+        // Health
+        .route("/health", get(health_check))
         .with_state(state);
 
     tracing::info!("HTTP JSON proxy listening on http://{}", http_addr);
@@ -108,6 +110,17 @@ async fn get_graph_info(
     let mut client = grpc_client(&state).await.map_err(internal)?;
     client
         .get_graph_info(GetGraphInfoRequest { graph_id })
+        .await
+        .map(|r| Json(r.into_inner()))
+        .map_err(map_grpc_err)
+}
+
+async fn health_check(
+    axum::extract::State(state): axum::extract::State<AppState>,
+) -> Result<Json<HealthCheckResponse>, (axum::http::StatusCode, String)> { 
+    let mut client = grpc_client(&state).await.map_err(internal)?;
+    client
+        .health_check(HealthCheckRequest {})
         .await
         .map(|r| Json(r.into_inner()))
         .map_err(map_grpc_err)
