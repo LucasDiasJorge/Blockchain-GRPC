@@ -1,0 +1,13 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 50051
+  },
+  "blockchain": {
+    "default_difficulty": 2,
+    "max_block_size": 1048576
+  },
+  "storage": {
+    "data_dir": "./data/blockchain"
+  }
+}

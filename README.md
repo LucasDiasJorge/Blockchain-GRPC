@@ -377,6 +377,7 @@ client gRPC → AddBlockRequest → BlockchainServiceImpl::handle_add_block
 - `tracing` + `RUST_LOG=debug` revelam detalhes de execução.
 - Integrar `tracing-opentelemetry` + Jaeger/Tempo para observabilidade distribuída.
 - Métricas futuras: adicione `metrics` crate ou `prometheus`.
+- **Build troubleshooting**: consulte [BUILD_TROUBLESHOOTING.md](docs/BUILD_TROUBLESHOOTING.md) para resolver erros comuns de compilação.
 
 ## 🧪 Testes, Integração e Qualidade
 
@@ -416,6 +417,7 @@ async fn test_block_creation_and_validation() {
 - Profiler: `perf` (Linux) ou `Instruments` (macOS) para analisar uso de CPU.
 - Debug com `lldb`/`gdb`: `rust-gdb target/debug/blockchain-grpc`.
 - Inspecione RocksDB com `rocksdb::Iterator` ou ferramentas CLI (`ldb` bundled com RocksDB).
+- **Build errors**: consulte [BUILD_TROUBLESHOOTING.md](docs/BUILD_TROUBLESHOOTING.md) para soluções de problemas de compilação comuns.
 
 ## ✅ Checklist de Estudos
 
