@@ -127,37 +127,66 @@ impl BlockchainRepository for BlockchainRepositoryImpl {
     }
 
     async fn save_graph(&self, graph: &BlockchainGraph) -> Result<(), Box<dyn Error>> {
+        tracing::info!("Starting save_graph for graph_id: {}", graph.id);
+
         let serialized = bincode::serialize(graph)?;
+        tracing::info!("Serialized graph metadata for {}", graph.id);
+
         let graph_key = Self::graph_key(&graph.id);
         self.db.put(&graph_key, &serialized)?;
+        tracing::info!("Saved graph metadata to DB for {}", graph.id);
 
-        // Update cache
-        let mut cache = self.cache.write().await;
-        cache.insert(graph.id.clone(), graph.clone());
+        // Update cache in a short scope to avoid holding the lock across await points
+        {
+            let mut cache = self.cache.write().await;
+            cache.insert(graph.id.clone(), graph.clone());
+            tracing::info!("Updated in-memory cache for {}", graph.id);
+        } // lock released here
 
-        // Update graph list
-        let mut graphs = self.list_graphs().await?;
-        if !graphs.iter().any(|g| g.id == graph.id) {
-            graphs.push(graph.clone());
-            let graph_ids: Vec<String> = graphs.iter().map(|g| g.id.clone()).collect();
+        // Update graph list directly using DB to avoid re-entrancy on cache/list_graphs
+        let list_key = Self::graph_list_key();
+        tracing::info!("Loading graph list from DB");
+        let current = self.db.get(&list_key)?;
+        let mut graph_ids: Vec<String> = if let Some(bytes) = current {
+            match bincode::deserialize(&bytes) {
+                Ok(ids) => ids,
+                Err(e) => {
+                    tracing::error!("Failed to deserialize graph list, resetting list. Error: {}", e);
+                    Vec::new()
+                }
+            }
+        } else {
+            Vec::new()
+        };
+
+        if !graph_ids.iter().any(|id| id == &graph.id) {
+            tracing::info!("Graph {} not in list, adding", graph.id);
+            graph_ids.push(graph.id.clone());
             let serialized_list = bincode::serialize(&graph_ids)?;
-            self.db.put(&Self::graph_list_key(), &serialized_list)?;
+            self.db.put(&list_key, &serialized_list)?;
+            tracing::info!("Updated graph list in DB");
+        } else {
+            tracing::info!("Graph {} already in list, skipping update", graph.id);
         }
 
+        tracing::info!("Successfully saved graph {}", graph.id);
         Ok(())
     }
 
     async fn get_graph(&self, graph_id: &str) -> Result<Option<BlockchainGraph>, Box<dyn Error>> {
         // Check cache first
+        tracing::trace!("get_graph: checking cache for {}", graph_id);
         {
             let cache = self.cache.read().await;
             if let Some(graph) = cache.get(graph_id) {
+                tracing::debug!("get_graph: cache hit for {}", graph_id);
                 return Ok(Some(graph.clone()));
             }
         }
 
         // Load from database
         let graph_key = Self::graph_key(graph_id);
+        tracing::trace!("get_graph: loading from DB with key {}", graph_key);
         let data = match self.db.get(&graph_key)? {
             Some(data) => data,
             None => return Ok(None),
@@ -168,6 +197,7 @@ impl BlockchainRepository for BlockchainRepositoryImpl {
         // Load all blocks into graph
         let latest_block = self.get_latest_block(graph_id).await?;
         if let Some(latest) = latest_block {
+            tracing::trace!("get_graph: loading blocks 0..={} for {}", latest.height, graph_id);
             let blocks = self.get_blocks_range(graph_id, 0, latest.height).await?;
             graph.load_blocks(blocks);
         }
@@ -175,23 +205,34 @@ impl BlockchainRepository for BlockchainRepositoryImpl {
         // Update cache
         let mut cache = self.cache.write().await;
         cache.insert(graph_id.to_string(), graph.clone());
+        tracing::trace!("get_graph: inserted {} into cache", graph_id);
 
         Ok(Some(graph))
     }
 
     async fn list_graphs(&self) -> Result<Vec<BlockchainGraph>, Box<dyn Error>> {
         let list_key = Self::graph_list_key();
+        tracing::trace!("list_graphs: reading graph list from {}", list_key);
         let data = match self.db.get(&list_key)? {
             Some(data) => data,
             None => return Ok(Vec::new()),
         };
 
-        let graph_ids: Vec<String> = bincode::deserialize(&data)?;
+        let graph_ids: Vec<String> = match bincode::deserialize(&data) {
+            Ok(ids) => ids,
+            Err(e) => {
+                tracing::error!("list_graphs: failed to deserialize list: {}", e);
+                Vec::new()
+            }
+        };
+        tracing::debug!("list_graphs: found {} ids: {:?}", graph_ids.len(), graph_ids);
         let mut graphs = Vec::new();
 
         for id in graph_ids {
             if let Some(graph) = self.get_graph(&id).await? {
                 graphs.push(graph);
+            } else {
+                tracing::warn!("list_graphs: id {} present in list but graph not found in DB", id);
             }
         }
 
@@ -200,6 +241,8 @@ impl BlockchainRepository for BlockchainRepositoryImpl {
 
     async fn graph_exists(&self, graph_id: &str) -> Result<bool, Box<dyn Error>> {
         let graph_key = Self::graph_key(graph_id);
-        self.db.exists(&graph_key)
+        let exists = self.db.exists(&graph_key)?;
+        tracing::debug!("graph_exists: key {} exists={} ", graph_key, exists);
+        Ok(exists)
     }
 }
