@@ -30,6 +30,8 @@ impl BlockchainServiceImpl {
         let graphs = self.repository.list_graphs().await?;
         let mut graph_map = self.graphs.write().await;
 
+        println!("Loading {} graphs from storage...", graphs.len());
+
         for mut graph in graphs {
             tracing::info!(
                 "Loading graph: {} ({} blocks)",
@@ -279,17 +281,27 @@ impl BlockchainServiceImpl {
     pub async fn handle_list_graphs(
         &self,
     ) -> Result<Response<ListGraphsResponse>, Status> {
+        tracing::debug!("📋 Listing all graphs...");
+
         let graphs = self.graphs.read().await;
+        let graph_count = graphs.len();
+
+        tracing::info!("📊 Found {} graphs in cache", graph_count);
 
         let graph_infos: Vec<GraphInfo> = graphs
             .values()
-            .map(|g| GraphInfo {
-                graph_id: g.id.clone(),
-                graph_type: g.graph_type.to_i32(),
-                total_blocks: g.get_chain_length(),
-                description: g.description.clone(),
+            .map(|g| {
+                tracing::trace!("  - {} ({:?}): {} blocks", g.id, g.graph_type, g.get_chain_length());
+                GraphInfo {
+                    graph_id: g.id.clone(),
+                    graph_type: g.graph_type.to_i32(),
+                    total_blocks: g.get_chain_length(),
+                    description: g.description.clone(),
+                }
             })
             .collect();
+
+        tracing::debug!("✅ Prepared {} graph infos for response", graph_infos.len());
 
         Ok(Response::new(ListGraphsResponse {
             graphs: graph_infos,
@@ -301,48 +313,72 @@ impl BlockchainServiceImpl {
         &self,
         request: CreateGraphRequest,
     ) -> Result<Response<CreateGraphResponse>, Status> {
+        tracing::info!("📝 Creating graph '{}'", request.graph_id);
+
         let graph_id = request.graph_id.clone();
 
         // Check if graph already exists
-        if self
-            .repository
-            .graph_exists(&graph_id)
-            .await
-            .unwrap_or(false)
-        {
-            return Ok(Response::new(CreateGraphResponse {
-                success: false,
-                message: format!("Graph '{}' already exists", graph_id),
-                graph_info: None,
-            }));
+        match self.repository.graph_exists(&graph_id).await {
+            Ok(true) => {
+                tracing::warn!("❌ Graph '{}' already exists", graph_id);
+                return Ok(Response::new(CreateGraphResponse {
+                    success: false,
+                    message: format!("Graph '{}' already exists", graph_id),
+                    graph_info: None,
+                }));
+            }
+            Err(e) => {
+                tracing::error!("❌ Error checking if graph exists: {}", e);
+                return Ok(Response::new(CreateGraphResponse {
+                    success: false,
+                    message: format!("Error checking graph existence: {}", e),
+                    graph_info: None,
+                }));
+            }
+            Ok(false) => {
+                // Graph doesn't exist, continue
+                tracing::debug!("✅ Graph '{}' does not exist, proceeding with creation", graph_id);
+            }
         }
 
         // Create new graph
         let graph_type = GraphType::from_i32(request.graph_type);
-        let graph = BlockchainGraph::new(graph_id.clone(), graph_type, request.description, 2);
+        let graph = BlockchainGraph::new(
+            graph_id.clone(),
+            graph_type,
+            request.description.clone(),
+            2,
+        );
+
+        tracing::info!("📦 Created graph '{}' with type {:?}", graph_id, graph_type);
 
         // Persist genesis block
         if let Some(genesis) = graph.get_latest_block() {
+            tracing::debug!("💾 Persisting genesis block for graph '{}'...", graph_id);
             if let Err(e) = self.repository.save_block(&graph_id, genesis).await {
+                tracing::error!("❌ Failed to persist genesis block for '{}': {}", graph_id, e);
                 return Ok(Response::new(CreateGraphResponse {
                     success: false,
                     message: format!("Failed to persist genesis block: {}", e),
                     graph_info: None,
                 }));
             }
+            tracing::info!("✅ Genesis block persisted for graph '{}'", graph_id);
         }
 
         // Save graph metadata
+        tracing::info!("💾 Saving graph metadata for '{}'...", graph_id);
         if let Err(e) = self.repository.save_graph(&graph).await {
+            tracing::error!("❌ Failed to save graph metadata for '{}': {}", graph_id, e);
             return Ok(Response::new(CreateGraphResponse {
                 success: false,
                 message: format!("Failed to save graph: {}", e),
                 graph_info: None,
             }));
         }
+        tracing::info!("✅ Graph metadata saved for '{}'", graph_id);
 
-        // Add to in-memory cache
-        let mut graphs = self.graphs.write().await;
+        // Prepare graph info BEFORE taking the write lock
         let graph_info = GraphInfo {
             graph_id: graph.id.clone(),
             graph_type: graph.graph_type.to_i32(),
@@ -350,7 +386,15 @@ impl BlockchainServiceImpl {
             description: graph.description.clone(),
         };
 
-        graphs.insert(graph_id, graph);
+        // Add to in-memory cache (minimize lock time)
+        {
+            tracing::debug!("🔒 Acquiring write lock to add graph '{}' to cache...", graph_id);
+            let mut graphs = self.graphs.write().await;
+            graphs.insert(graph_id.clone(), graph);
+            tracing::debug!("🔓 Released write lock for graph '{}'", graph_id);
+        } // Lock is explicitly released here
+
+        tracing::info!("✨ Graph '{}' created successfully!", graph_id);
 
         Ok(Response::new(CreateGraphResponse {
             success: true,
