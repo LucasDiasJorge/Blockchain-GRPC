@@ -65,3 +65,11 @@ codegen-units = 1
 [[example]]
 name = "client_example"
 path = "examples/client_example.rs"
+
+[[bin]]
+name = "http_proxy"
+path = "src/bin/http_proxy.rs"
+# Don't build this bin when running `cargo test` (avoids unrelated compile errors during tests)
+test = false
+bench = false
+doc = false
