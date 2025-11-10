@@ -10,17 +10,8 @@ pub trait BlockchainRepository: Send + Sync {
     async fn save_block(&self, graph_id: &str, block: &Block) -> Result<(), Box<dyn Error>>;
     async fn get_block(&self, graph_id: &str, hash: &str) -> Result<Option<Block>, Box<dyn Error>>;
     async fn get_latest_block(&self, graph_id: &str) -> Result<Option<Block>, Box<dyn Error>>;
-    async fn get_block_by_height(
-        &self,
-        graph_id: &str,
-        height: u64,
-    ) -> Result<Option<Block>, Box<dyn Error>>;
-    async fn get_blocks_range(
-        &self,
-        graph_id: &str,
-        start: u64,
-        end: u64,
-    ) -> Result<Vec<Block>, Box<dyn Error>>;
+    async fn get_block_by_height(&self, graph_id: &str, height: u64,) -> Result<Option<Block>, Box<dyn Error>>;
+    async fn get_blocks_range(&self, graph_id: &str, start: u64, end: u64,) -> Result<Vec<Block>, Box<dyn Error>>;
     async fn save_graph(&self, graph: &BlockchainGraph) -> Result<(), Box<dyn Error>>;
     async fn get_graph(&self, graph_id: &str) -> Result<Option<BlockchainGraph>, Box<dyn Error>>;
     async fn list_graphs(&self) -> Result<Vec<BlockchainGraph>, Box<dyn Error>>;
