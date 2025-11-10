@@ -39,8 +39,6 @@ async fn main() -> Result<()> {
         }
     }
 
-    println!();
-
     // 2. List graphs
     println!("📋 Listing all graphs...");
     let list_response = client.list_graphs(ListGraphsRequest {}).await?;
