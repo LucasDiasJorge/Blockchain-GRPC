@@ -79,17 +79,21 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ## 🗃️ Arquitetura do Repositório
 
 ```
-src/
-├── domain/               # Entidades, regras e traits (núcleo do negócio)
-├── application/          # Serviços de aplicação + casos de uso
-├── infrastructure/       # gRPC server, adapters de persistência
-├── config/               # Carregamento/salvamento de configurações JSON
-└── bin/                  # Binários auxiliares (ex.: http_proxy)
-
-proto/                    # Definições protobuf do serviço gRPC
-tests/                    # Testes de integração com Tokio async
-Smart-Contract/           # Cliente C# demonstrando interoperabilidade
-build.rs                  # Geração automática de código gRPC
+.
+├── code/                 # Crate Rust principal (blockchain-grpc)
+│   ├── src/              # Código de domínio, aplicação, infraestrutura e config
+│   ├── tests/            # Testes de integração async
+│   ├── examples/         # Exemplos (ex.: client gRPC)
+│   ├── proto/            # Definições protobuf do serviço gRPC
+│   ├── build.rs          # Geração automática de código gRPC
+│   └── Cargo.toml        # Manifesto do crate Rust
+│
+├── docs/                 # Documentação de arquitetura, API, bugfixes, etc.
+├── tutorials/            # Guias de estudo, quickstarts e material didático
+├── scripts/              # Scripts de build, setup, execução e testes gRPC
+├── Cargo.toml            # Workspace Cargo (agrupa o crate em code/)
+├── config.json           # Configuração padrão da aplicação
+└── README.md             # Este guia principal
 ```
 
 ### Roteiro de estudo da estrutura
