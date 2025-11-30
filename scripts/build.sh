@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Build script for the blockchain project
+# Build script for the blockchain project (workspace root)
+
+# Ensure we are in the workspace root
+cd "$(dirname "$0")/.."
 
 set -e
 

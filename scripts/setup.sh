@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Development setup script
+# Development setup script (workspace root)
+
+# Ensure we are in the workspace root
+cd "$(dirname "$0")/.."
 
 set -e
 
