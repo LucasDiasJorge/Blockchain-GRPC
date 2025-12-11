@@ -469,5 +469,3 @@ async fn test_block_creation_and_validation() {
 - Tracing + Observabilidade: [https://docs.rs/tracing](https://docs.rs/tracing)
 
 ---
-
-Aprenda, experimente e contribua. Este README foi projetado como manual vivo: volte sempre para revisar conceitos, praticar laboratórios e evoluir o `Blockchain-GRPC` rumo a produção.
